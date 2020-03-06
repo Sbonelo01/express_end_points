@@ -7,7 +7,7 @@ const {
     deleteVisitors,
     viewVisitor,
     updateVisitor
-} = require('./app');
+} = require('../src/app');
 
 app.use(express.json());
 app.use(express.urlencoded({
@@ -67,3 +67,7 @@ app.put('/updateVisitor/:id', async(req, res) => {
 const server = app.listen(3000, () => {
     console.log('Server is running on port 3000')
 });
+
+module.exports = {
+    server
+}
