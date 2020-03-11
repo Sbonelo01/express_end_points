@@ -1,15 +1,18 @@
 "use strict";
+'use strict';
+
+require('dotenv').config();
 
 const {
     Client
-} = require("pg");
+} = require('pg');
 
 const client = new Client({
-    user: "user",
-    host: "localhost",
-    password: "pass",
-    port: 5432,
-    database: "db"
+    user: process.env.PGUSER,
+    host: process.env.PGHOST,
+    password: process.env.PGPASSWORD,
+    port: process.env.PGPORT,
+    database: process.env.PGDATABASE
 });
 
 const addNewVisitor = async(visitorName, visitorAge, dateOfVisit, timeOfVisit, assistantName, comments) => {
