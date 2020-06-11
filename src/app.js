@@ -1,24 +1,29 @@
-'use strict';
-
-require('dotenv').config();
+"use strict"
 
 const {
     Client
-} = require('pg');
+} = require('pg')
 
 const client = new Client({
-    user: process.env.PGUSER,
-    host: process.env.PGHOST,
-    password: process.env.PGPASSWORD,
-    port: process.env.PGPORT,
-    database: process.env.PGDATABASE
-});
+    host: 'localhost',
+    user: 'user',
+    password: 'pass',
+    database: 'db',
+    port: 5432
+})
 
-client.connect();
+//console.log(client)
+
+client.connect((error) => {
+    if (error) {
+        console.log(error)
+    }
+    console.log('CONNECTED...')
+})
 
 const createTable = async() => {
     return new Promise(async(request, response) => {
-        let sql = await client.query(`CREATE TABLE IF NOT EXISTS VISITORS(
+        let sql = await client.query(`CREATE TABLE IF NOT EXISTS visitors(
                 id SERIAL PRIMARY KEY,
                 visitorName varchar(255) NOT NULL,
                 assistant varchar(255) NOT NULL,
@@ -31,11 +36,12 @@ const createTable = async() => {
                 if (error) {
                     throw error;
                 }
-                //console.log(sql
+                //console.log(sql)
             }
         )
     })
 }
+createTable();
 
 const addNewVisitor = async(visitorName, assistant, visitorAge, dateOfVisit, timeOfVisit, comments) => {
     return new Promise(async(request, response) => {
@@ -46,7 +52,9 @@ const addNewVisitor = async(visitorName, assistant, visitorAge, dateOfVisit, tim
                 }
                 console.log(results.rows);
             });
+
     })
+
 };
 
 const listAllVisitors = async(request, response) => {
@@ -61,33 +69,18 @@ const listAllVisitors = async(request, response) => {
     );
 };
 
-const viewVisitor = async(id) => {
-    return new Promise(async(request, response) => {
-        let results = await client.query(
-            `SELECT * FROM visitors WHERE id = $1`, [id],
-            (err, results) => {
-                if (err) {
-                    throw err;
-                }
-                request(results.rows[0]);
-            }
-        );
-    })
-};
-
-const deleteVisitors = async() => {
-    return new Promise(async(request, response) => {
-        let results = await client.query(
-            `DELETE FROM visitors `, (err, results) => {
-                if (err) {
-                    throw err;
-                }
-                console.log('All rows deleted!')
-                request(results.rows);
-            }
-        );
-    })
-};
+const updateVisitor = async(id, visitor_name, visitor_age, date_of_visit, time_of_visit, assistant, comments) => {
+    const sql = `
+        UPDATE 
+        visitors SET
+        name = $2, age = $3, date_of_visit = $4, time_of_visit = $5, assistant = $6, comments = $7 
+        WHERE id = $1 
+        RETURNING *
+    `;
+    const data = [id, visitor_name, visitor_age, date_of_visit, time_of_visit, assistant, comments];
+    const res = await client.query(sql, data);
+    return res.rows
+}
 
 const deleteVisitor = async(id) => {
     return new Promise(async(request, response) => {
@@ -98,32 +91,60 @@ const deleteVisitor = async(id) => {
                     throw error;
                 }
                 request(results.rows);
-                console.log('deleted!!!')
+                console.log('DELETED VISITOR !')
             }
         );
     })
 };
 
-const updateVisitor = async(id, visitorName, visitorAge, dateOfVisit, timeOfVisit, assistantName, comments) => {
+const deleteVisitors = async() => {
+        return new Promise(async(request, response) => {
+            let results = await client.query(
+                `DELETE FROM visitors RETURNING *`,
+                (error, results) => {
+                    if (error) {
+                        throw error;
+                    }
+                request(results.rows)
+                console.log('DELETED ALL!')
+            }
+        )
+    })
+}
+
+const viewVisitor = async(id) => {
     return new Promise(async(request, response) => {
         let results = await client.query(
-            `UPDATE visitors SET visitorName = $2, visitorAge = $3,dateOfVisit = $4,timeOfVisit=$5,assistantName = $6,comments =$7 WHERE id = $1 RETURNING *`, [vid, vName, vAge, dateOfVisit, timeOfVisit, assistantName, comments],
-            (err, results) => {
-                if (err) {
-                    throw err;
+            `SELECT * FROM visitors WHERE id = $1`, [id],
+            (error, results) => {
+                if(error) {
+                    throw error;
                 }
-                request(results.rows[0]);
+                request(results.rows)
             }
-        );
+        )
     })
-};
+}
 
+const viewVisitors = async() => {
+    return new Promise(async(request, response) => {
+        let results = await client.query(
+            `SELECT * FROM visitors`,
+            (error, results) => {
+                if(error){
+                    throw error;
+                }
+                request(results.rows)
+            }
+        )
+    })
+}
 
 module.exports = {
     addNewVisitor,
-    listAllVisitors,
-    viewVisitor,
-    deleteVisitors,
+    updateVisitor,
     deleteVisitor,
-    updateVisitor
+    deleteVisitors,
+    viewVisitors,
+    viewVisitor
 }
