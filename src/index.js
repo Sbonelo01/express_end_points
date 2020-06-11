@@ -1,69 +1,72 @@
-const express = require('express');
-const app = express();
+"use strict"
+
 const {
     addNewVisitor,
-    listAllVisitors,
+    updateVisitor,
     deleteVisitor,
     deleteVisitors,
-    viewVisitor,
-    updateVisitor
-} = require('../src/app');
-const port = 3000;
+    viewVisitors,
+    viewVisitor
+} = require('./app');
 
-app.use(express.json());
-app.use(express.urlencoded({
+const port = process.env.PORT || 3000;
+const express = require('express');
+const cors = require('cors');
+const {
+    request
+} = require('http');
+const path = require('path');
+const app = express();
+const bodyParser = require('body-parser');
+const urlencodedParser = bodyParser.urlencoded({
     extended: true
-}));
+});
 
-app.post('/addNewVisitor', async(req, res) => {
-    const name = req.body.visitorName
-    const age = req.body.visitorAge
-    const dateOfVisit = req.body.dateOfVisit
-    const timeOfVisit = req.body.timeOfVisit
-    const nameOfAssistant = req.body.nameOfAssistant
-    const comments = req.body.comments
-    const visitor = await addNewVisitor(visitorName, visitorAge, dateOfVisit, timeOfVisit, nameOfAssistant, comments)
-    res.send(JSON.stringify(visitor));
-    res.end();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(urlencodedParser);
+app.use('/', express.static('public'));
+
+
+app.get('/single-page-app', (request, response) => {
+    return response.status(200).sendFile(__dirname + '/public/index.html')
 })
 
-app.delete('/deleteVisitor/:id', async(req, res) => {
-    const visitor = await deleteVisitor(req.params.id);
-    res.send(JSON.stringify(visitor));
-    res.end();
-})
+app.post('/add-new-visitor', async (request, response) => {
+    let visitorName = request.body.visitorName
+    let assistant = request.body.assistant
+    let visitorAge = request.body.visitorAge
+    let dateOfVisit = request.body.dateOfVisit
+    let timeOfVisit = request.body.timeOfVisit
+    let comments = request.body.comments
 
-app.delete('/deleteVisitors', async(req, res) => {
-    const visitor = await deleteVisitors();
-    res.send(JSON.stringify(visitor));
-    res.end();
-})
+    const visitor = await addNewVisitor(visitorName, assistant, visitorAge, dateOfVisit, timeOfVisit, comments);
+ 
+    response.status(200).json({
+        status: 'ok',
+        visitor: visitor[0]
+    });
+    //response.end();
+});
 
-app.get('/viewVisitors', async(req, res) => {
-    const visitor = await listAllVisitors();
-    res.send(JSON.stringify(visitor));
-    res.end();
-})
+// Delete visitor
+app.delete('/delete-visitor/:id', async (request, response) => {
+    const id = request.params.id;
+    const visitor = await deleteVisitor(id);
+    response.status(200).json({ 
+        status: 'ok',
+        visitor: visitor[0] 
+    });
+});
 
-app.get('/viewVisitor/:id', async(req, res) => {
-    const visitor = await viewVisitor(req.params.id);
-    res.send(JSON.stringify(visitor));
-    res.end();
-
-})
-
-app.put('/updateVisitor/:id', async(req, res) => {
-    const id = req.params.id
-    const name = req.body.visitorName
-    const age = req.body.visitorAge
-    const dateOfVisit = req.body.dateOfVisit
-    const timeOfVisit = req.body.timeOfVisit
-    const nameOfAssistant = req.body.nameOfAssistant
-    const comments = req.body.comments
-    const visitor = await updateVisitor(id, visitorName, visitorAge, dateOfVisit, timeOfVisit, nameOfAssistant, comments)
-    res.send(JSON.stringify(visitor));
-    res.end();
-})
+// View visitors
+app.get('/view-visitors', async (request, response) => { 
+    const visitors = await viewVisitors();
+    response.status(200).json({ 
+        status: 'ok',
+        visitors: visitors
+    });
+});
 
 const server = app.listen({port}, () => {
     console.log(`Server is running on port ${port}`)
@@ -72,4 +75,3 @@ const server = app.listen({port}, () => {
 module.exports = {
     server
 }
- 
